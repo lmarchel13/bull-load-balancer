@@ -13,15 +13,15 @@ const clients = {
 
 loadBalancerQueue.process(async (job, done) => {
   const lessBusyQueue = await getLessBusyQueue();
-  console.log({ lessBusyQueue });
 
+  console.log("adding job to less busy queue", { lessBusyQueue });
   clients[lessBusyQueue].add(job.data);
 
   done();
 });
 
 async function getLessBusyQueue() {
-  const keys = await redis.keys("*:jobs-count");
+  const keys = await redis.keys("*:pod-memory");
   let min = +Infinity;
   let lessBusyQueue = "";
 
@@ -42,8 +42,9 @@ async function getLessBusyQueue() {
 
 (async () => {
   let id = 1;
+
   setInterval(() => {
-    loadBalancerQueue.add({ id, name: "blablabla" });
+    loadBalancerQueue.add({ id, name: "blablabla", timestamp: new Date() });
     id++;
   }, 1000);
 })();
