@@ -22,22 +22,12 @@ loadBalancerQueue.process(async (job, done) => {
 
 async function getLessBusyQueue() {
   const keys = await redis.keys("*:pod-memory");
-  let min = +Infinity;
-  let lessBusyQueue = "";
+  const values = await redis.mget(keys);
 
-  await Promise.all(
-    keys.map(async (key) => {
-      const queueName = key.split(":")[0];
-      const value = +(await redis.get(key));
+  const podMemories = keys.map((key, index) => ({ queue: key.split(":")[0], memory: values[index] }));
+  const bestPod = podMemories.reduce((min, pod) => (+pod.memory < +min.memory ? pod : min), { memory: +Infinity });
 
-      if (value <= min) {
-        min = value;
-        lessBusyQueue = queueName;
-      }
-    })
-  );
-
-  return lessBusyQueue;
+  return bestPod.queue;
 }
 
 (async () => {
